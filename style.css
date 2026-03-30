@@ -583,7 +583,7 @@ a { color: inherit; }
   gap: 4px;
   transition: all .14s;
 }
-.popup-btn-primary { background: var(--g800); color: #fff; }
+.popup-btn-primary { background: var(--g800); color: #fff !important; }
 .popup-btn-primary:hover { background: var(--g900); }
 .popup-btn-primary:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
 .popup-btn-secondary { background: #f0f0f0; color: #444; }
