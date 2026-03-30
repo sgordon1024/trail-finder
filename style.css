@@ -213,7 +213,7 @@ a { color: inherit; }
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 2px 0 12px rgba(0,0,0,.08);
-  z-index: 100;
+  z-index: 1000;
   transition: transform .25s cubic-bezier(.4,0,.2,1);
 }
 
@@ -242,7 +242,7 @@ a { color: inherit; }
   right: 0;
   bottom: 0;
   background: rgba(0,0,0,.45);
-  z-index: 90;
+  z-index: 999;
   display: none;
   backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(1px);
@@ -455,7 +455,7 @@ a { color: inherit; }
 /* ============================================================
    Map
    ============================================================ */
-.map-wrap { flex: 1; position: relative; overflow: hidden; }
+.map-wrap { flex: 1; position: relative; overflow: hidden; isolation: isolate; }
 
 #map {
   width: 100%;
