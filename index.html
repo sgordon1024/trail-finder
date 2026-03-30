@@ -25,6 +25,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- Skip navigation link (WCAG 2.4.1) -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div class="app">
 
   <!-- ===== Header ===== -->
@@ -67,12 +69,12 @@
     </div>
 
     <div class="header-right">
-      <span class="count-badge" id="countBadge">— parks</span>
+      <span class="count-badge" id="countBadge" aria-live="polite" aria-atomic="true">— parks</span>
     </div>
   </header>
 
   <!-- ===== Main ===== -->
-  <div class="main" id="main">
+  <main class="main" id="main-content">
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar" aria-label="Campground filters and list">
@@ -110,7 +112,7 @@
 
       <!-- List header -->
       <div class="list-header">
-        <span id="listCount">Loading…</span>
+        <span id="listCount" role="status" aria-live="polite" aria-atomic="true">Loading…</span>
       </div>
 
       <!-- Campground list -->
@@ -126,7 +128,7 @@
 
       <!-- Custom map controls -->
       <div class="map-controls">
-        <button class="map-btn" id="fitAllBtn" title="Show all campgrounds">
+        <button class="map-btn" id="fitAllBtn" title="Show all campgrounds" aria-label="Show all campgrounds">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="3" width="7" height="7" rx="1"/>
             <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -134,7 +136,7 @@
             <rect x="14" y="14" width="7" height="7" rx="1"/>
           </svg>
         </button>
-        <button class="map-btn" id="locateBtn" title="My location">
+        <button class="map-btn" id="locateBtn" title="My location" aria-label="Show my location on map">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="3"/>
             <circle cx="12" cy="12" r="7"/>
@@ -147,7 +149,7 @@
       </div>
     </div>
 
-  </div><!-- /.main -->
+  </main><!-- /#main-content -->
 </div><!-- /.app -->
 
 <!-- Leaflet JS -->
@@ -156,6 +158,6 @@
 <!-- MarkerCluster JS -->
 <script src="vendor/leaflet.markercluster.js"></script>
 
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

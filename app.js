@@ -162,11 +162,45 @@ function makeIcon(zone) {
 }
 
 // ============================================================
+// Thousand Trails URL builder
+// ============================================================
+const STATE_NAMES = {
+  AL: 'alabama',        AZ: 'arizona',         BC: null,
+  CA: 'california',     FL: 'florida',         IL: 'illinois',
+  IN: 'indiana',        KY: 'kentucky',        MA: 'massachusetts',
+  ME: 'maine',          MI: 'michigan',        NC: 'north-carolina',
+  NJ: 'new-jersey',     NV: 'nevada',          NY: 'new-york',
+  OH: 'ohio',           OR: 'oregon',          PA: 'pennsylvania',
+  SC: 'south-carolina', TN: 'tennessee',       TX: 'texas',
+  VA: 'virginia',       WA: 'washington',
+};
+
+function campgroundSlug(name) {
+  return name
+    .toLowerCase()
+    .replace(/^thousand\s+trails\s*/i, '')  // Drop "Thousand Trails" prefix
+    .replace(/'/g, '')                       // Remove apostrophes (Toby's → tobys)
+    .replace(/[^a-z0-9\s]/g, ' ')           // Special chars → space
+    .trim()
+    .replace(/\s+/g, '-')                    // Spaces → hyphens
+    .replace(/-+/g, '-');                    // Collapse double-hyphens
+}
+
+function campgroundUrl(c) {
+  const stateName = STATE_NAMES[c.state];
+  if (!stateName) {
+    // BC (Canada) and any unknown states fall back to the search page
+    return `https://thousandtrails.com/explore-campgrounds/?search=${encodeURIComponent(c.name)}`;
+  }
+  return `https://thousandtrails.com/${stateName}/${campgroundSlug(c.name)}`;
+}
+
+// ============================================================
 // Popup HTML
 // ============================================================
 function popupHTML(c) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
-  const ttUrl   = `https://thousandtrails.com/explore-campgrounds/?search=${encodeURIComponent(c.name)}`;
+  const ttUrl   = campgroundUrl(c);
   return `
     <div class="popup-card">
       <div class="popup-header">
@@ -185,7 +219,8 @@ function popupHTML(c) {
           <a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-primary">
             Directions
           </a>
-          <a href="${ttUrl}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-secondary">
+          <a href="${ttUrl}" target="_blank" rel="noopener noreferrer" class="popup-btn popup-btn-secondary"
+             aria-label="View ${escHtml(c.name)} on Thousand Trails website">
             Website
           </a>
         </div>

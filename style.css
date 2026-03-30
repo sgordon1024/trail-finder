@@ -37,6 +37,33 @@ input, select { font-family: var(--font); }
 ul { list-style: none; }
 a { color: inherit; }
 
+/* ------ Skip link (WCAG 2.4.1) ------ */
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: 8px;
+  z-index: 9999;
+  padding: 10px 16px;
+  background: #000;
+  color: #fff;
+  font-size: .9rem;
+  font-weight: 600;
+  border-radius: 0 0 6px 6px;
+  text-decoration: none;
+  transition: top .15s;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--g500);
+  outline-offset: 2px;
+}
+
+/* ------ Global focus-visible (WCAG 2.4.7) ------ */
+:focus-visible {
+  outline: 3px solid var(--g500);
+  outline-offset: 2px;
+}
+
 /* ------ App Shell ------ */
 .app {
   display: flex;
@@ -117,10 +144,15 @@ a { color: inherit; }
   background: rgba(255,255,255,.1);
   color: #fff;
   font-size: .88rem;
+  /* outline removed intentionally — :focus-visible below provides the indicator */
   outline: none;
   transition: border-color .15s, background .15s;
 }
-.search-input::placeholder { color: rgba(255,255,255,.45); }
+.search-input:focus-visible {
+  outline: 3px solid var(--g500);
+  outline-offset: 0;
+}
+.search-input::placeholder { color: rgba(255,255,255,.5); }
 .search-input:focus {
   border-color: var(--g500);
   background: rgba(255,255,255,.16);
@@ -130,7 +162,8 @@ a { color: inherit; }
 .search-clear {
   position: absolute;
   right: 8px;
-  color: rgba(255,255,255,.55);
+  /* raised to ~80% opacity — ✕ character must meet 4.5:1 contrast as normal text */
+  color: rgba(255,255,255,.85);
   font-size: .72rem;
   padding: 4px 5px;
   border-radius: 4px;
@@ -140,6 +173,10 @@ a { color: inherit; }
 }
 .search-clear.visible { display: block; }
 .search-clear:hover { color: #fff; background: rgba(255,255,255,.1); }
+.search-clear:focus-visible {
+  outline: 3px solid var(--g500);
+  outline-offset: 2px;
+}
 
 /* Count badge */
 .header-right { flex-shrink: 0; margin-left: auto; }
@@ -180,30 +217,40 @@ a { color: inherit; }
   transition: transform .25s cubic-bezier(.4,0,.2,1);
 }
 
-/* Mobile sidebar slides */
+/* Mobile sidebar slides — position:fixed avoids iOS overflow:hidden clipping bug */
 @media (max-width: 768px) {
   .sidebar {
-    position: absolute;
-    top: 0; left: 0;
-    height: 100%;
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    height: calc(100dvh - var(--header-h));
+    height: calc(100vh - var(--header-h));
     transform: translateX(-100%);
+    /* Force GPU layer so transform is not clipped by parent overflow */
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   .sidebar.open { transform: translateX(0); }
 }
 
-/* Overlay (mobile only) */
+/* Overlay (mobile only) — also fixed so it covers the map below the header */
 .sidebar-overlay {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0,0,0,.45);
   z-index: 90;
   display: none;
   backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 .sidebar-overlay.active { display: block; }
 
 @media (min-width: 769px) {
-  .sidebar { transform: none !important; }
+  .sidebar { transform: none !important; will-change: auto; }
   .sidebar-overlay { display: none !important; }
 }
 
@@ -225,7 +272,8 @@ a { color: inherit; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .07em;
-  color: #999;
+  /* #666 on #f0f7f2 = 5.3:1 ✅  (was #999 = 2.56:1 ❌) */
+  color: #666;
   margin-bottom: 8px;
 }
 
@@ -243,6 +291,10 @@ a { color: inherit; }
   transition: all .14s;
 }
 .pill:hover { border-color: var(--g700); color: var(--g800); }
+.pill:focus-visible {
+  outline: 3px solid var(--g800);
+  outline-offset: 2px;
+}
 .pill.active {
   background: var(--g800);
   border-color: var(--g800);
@@ -258,6 +310,7 @@ a { color: inherit; }
   font-size: .85rem;
   color: #333;
   background: #fff;
+  /* outline removed — :focus-visible below provides the indicator */
   outline: none;
   cursor: pointer;
   transition: border-color .14s;
@@ -269,6 +322,10 @@ a { color: inherit; }
   padding-right: 28px;
 }
 .state-select:focus { border-color: var(--g700); }
+.state-select:focus-visible {
+  outline: 3px solid var(--g500);
+  outline-offset: 2px;
+}
 
 /* Reset */
 .reset-btn {
@@ -319,7 +376,8 @@ a { color: inherit; }
 }
 .list-header span {
   font-size: .7rem;
-  color: #aaa;
+  /* #767676 on #fff = 4.55:1 ✅  (was #aaa = 2.22:1 ❌) */
+  color: #767676;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .05em;
@@ -349,6 +407,11 @@ a { color: inherit; }
   background: var(--g50);
   border-left-color: var(--g500);
 }
+.campground-item:focus-visible {
+  outline: 3px solid var(--g800);
+  outline-offset: -3px;
+  background: var(--g50);
+}
 .campground-item.active {
   background: #f0f7f2;
   border-left-color: var(--g800);
@@ -375,7 +438,8 @@ a { color: inherit; }
 }
 .item-location {
   font-size: .73rem;
-  color: #888;
+  /* #767676 on #fff = 4.55:1 ✅  (was #888 = 3.27:1 ❌) */
+  color: #767676;
   margin-top: 2px;
 }
 
@@ -429,6 +493,10 @@ a { color: inherit; }
   color: var(--g800);
   box-shadow: var(--shadow-lg);
   transform: translateY(-1px);
+}
+.map-btn:focus-visible {
+  outline: 3px solid var(--g800);
+  outline-offset: 2px;
 }
 .map-btn svg { width: 17px; height: 17px; }
 
@@ -517,8 +585,10 @@ a { color: inherit; }
 }
 .popup-btn-primary { background: var(--g800); color: #fff; }
 .popup-btn-primary:hover { background: var(--g900); }
+.popup-btn-primary:focus-visible { outline: 3px solid #fff; outline-offset: -3px; }
 .popup-btn-secondary { background: #f0f0f0; color: #444; }
 .popup-btn-secondary:hover { background: #e4e4e4; }
+.popup-btn-secondary:focus-visible { outline: 3px solid var(--g800); outline-offset: -3px; }
 
 /* ============================================================
    Custom markers
