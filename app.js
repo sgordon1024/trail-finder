@@ -251,10 +251,12 @@ const ZONE_COLORS = {
 let map;
 let clusterGroup;
 const markers = {};   // id → L.marker
-let activeZone  = 'all';
-let activeState = 'all';
-let searchQuery = '';
-let activeId    = null;
+let activeZone        = 'all';
+let activeState       = 'all';
+let searchQuery       = '';
+let activeId          = null;
+let showFavoritesOnly = false;
+let favorites         = new Set(JSON.parse(localStorage.getItem('tt-favorites') || '[]'));
 
 // ============================================================
 // Marker icon factory
@@ -284,6 +286,48 @@ const STATE_NAMES = {
   VA: 'virginia',       WA: 'washington',
 };
 
+// ============================================================
+// Favorites helpers
+// ============================================================
+function saveFavorites() {
+  localStorage.setItem('tt-favorites', JSON.stringify([...favorites]));
+}
+
+function toggleFavorite(id) {
+  if (favorites.has(id)) {
+    favorites.delete(id);
+  } else {
+    favorites.add(id);
+  }
+  saveFavorites();
+  // Sync all heart buttons for this id (list + open popup)
+  document.querySelectorAll(`.fav-btn[data-id="${id}"], .popup-fav-btn[data-id="${id}"]`).forEach(btn => {
+    syncFavBtn(btn, favorites.has(id));
+  });
+  // Re-render list if favorites filter is active
+  if (showFavoritesOnly) render();
+}
+
+function syncFavBtn(btn, isFav) {
+  btn.classList.toggle('active', isFav);
+  btn.setAttribute('aria-label', isFav ? 'Remove from favorites' : 'Add to favorites');
+  btn.setAttribute('aria-pressed', String(isFav));
+}
+
+const HEART_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+
+// ============================================================
+// Toast
+// ============================================================
+let _toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `<span class="toast-heart">♥</span>${msg}`;
+  toast.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
 function campgroundSlug(name) {
   return name
     .toLowerCase()
@@ -312,11 +356,15 @@ function popupHTML(c) {
   const mapsQuery = addr || (c.name + ', ' + c.city + ', ' + c.state);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
   const ttUrl   = campgroundUrl(c);
+  const isFav   = favorites.has(c.id);
   return `
     <div class="popup-card">
       <div class="popup-header">
         <div class="popup-zone">${c.zone} Zone</div>
         <div class="popup-name">${escHtml(c.name)}</div>
+        <button class="popup-fav-btn${isFav ? ' active' : ''}" data-id="${c.id}"
+          aria-label="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
+          aria-pressed="${isFav}">${HEART_SVG}</button>
       </div>
       <div class="popup-body">
         <div class="popup-location">
@@ -380,6 +428,13 @@ function initMap() {
   });
 
   map.addLayer(clusterGroup);
+
+  // Wire favorite button inside popups via event delegation
+  map.on('popupopen', e => {
+    const btn = e.popup.getElement().querySelector('.popup-fav-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => toggleFavorite(+btn.dataset.id));
+  });
 }
 
 // ============================================================
@@ -402,6 +457,7 @@ function buildStateSelect() {
 function getFiltered() {
   const q = searchQuery.toLowerCase().trim();
   return CAMPGROUNDS.filter(c => {
+    if (showFavoritesOnly && !favorites.has(c.id)) return false;
     if (activeZone !== 'all' && c.zone !== activeZone) return false;
     if (activeState !== 'all' && c.state !== activeState) return false;
     if (q) {
@@ -438,14 +494,25 @@ function render() {
   list.innerHTML = '';
 
   if (n === 0) {
-    list.innerHTML = `
-      <li class="empty-state">
-        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <p>No campgrounds found</p>
-      </li>`;
+    if (showFavoritesOnly) {
+      list.innerHTML = `
+        <li class="empty-state">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          <p>No favorites yet</p>
+          <p style="font-size:.78rem;color:#999;margin-top:4px">Tap ♥ on any campground to save it</p>
+        </li>`;
+    } else {
+      list.innerHTML = `
+        <li class="empty-state">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <p>No campgrounds found</p>
+        </li>`;
+    }
     return;
   }
 
@@ -457,12 +524,16 @@ function render() {
     li.setAttribute('role', 'button');
     li.setAttribute('tabindex', '0');
     li.setAttribute('aria-label', `${c.name}, ${c.city}, ${c.state}`);
+    const isFav = favorites.has(c.id);
     li.innerHTML = `
       <span class="item-dot" style="background:${ZONE_COLORS[c.zone]}"></span>
       <div class="item-info">
         <div class="item-name">${escHtml(c.name)}</div>
         <div class="item-location">${escHtml(c.city)}, ${escHtml(c.state)}</div>
-      </div>`;
+      </div>
+      <button class="fav-btn${isFav ? ' active' : ''}" data-id="${c.id}"
+        aria-label="${isFav ? 'Remove from favorites' : 'Add to favorites'}"
+        aria-pressed="${isFav}">${HEART_SVG}</button>`;
 
     const activate = () => {
       highlightItem(c.id);
@@ -470,8 +541,17 @@ function render() {
       if (window.innerWidth <= 768) closeSidebar();
     };
 
-    li.addEventListener('click', activate);
+    li.addEventListener('click', e => {
+      if (e.target.closest('.fav-btn')) return; // let heart button handle its own click
+      activate();
+    });
     li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') activate(); });
+
+    li.querySelector('.fav-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFavorite(c.id);
+    });
+
     frag.appendChild(li);
   });
   list.appendChild(frag);
@@ -578,18 +658,38 @@ function setupSearch() {
 }
 
 // ============================================================
+// Favorites filter
+// ============================================================
+function setupFavoritesFilter() {
+  document.getElementById('favFilterBtn').addEventListener('click', () => {
+    showFavoritesOnly = !showFavoritesOnly;
+    const btn = document.getElementById('favFilterBtn');
+    btn.classList.toggle('active', showFavoritesOnly);
+    btn.setAttribute('aria-pressed', String(showFavoritesOnly));
+    render();
+    if (showFavoritesOnly) {
+      const n = favorites.size;
+      showToast(n === 0 ? 'No favorites saved yet' : `${n} favorite${n !== 1 ? 's' : ''} saved`);
+    }
+  });
+}
+
+// ============================================================
 // Reset
 // ============================================================
 function setupReset() {
   document.getElementById('resetBtn').addEventListener('click', () => {
-    activeZone  = 'all';
-    activeState = 'all';
-    searchQuery = '';
-    activeId    = null;
+    activeZone        = 'all';
+    activeState       = 'all';
+    searchQuery       = '';
+    activeId          = null;
+    showFavoritesOnly = false;
 
     document.getElementById('searchInput').value = '';
     document.getElementById('searchClear').classList.remove('visible');
     document.getElementById('stateSelect').value = 'all';
+    document.getElementById('favFilterBtn').classList.remove('active');
+    document.getElementById('favFilterBtn').setAttribute('aria-pressed', 'false');
 
     document.querySelectorAll('#zonePills .pill').forEach((p, i) => {
       p.classList.toggle('active', i === 0);
@@ -638,6 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupZonePills();
   setupStateSelect();
   setupSearch();
+  setupFavoritesFilter();
   setupReset();
   setupMapControls();
   render();
