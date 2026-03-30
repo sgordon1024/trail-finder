@@ -1,0 +1,20 @@
+{
+  "name": "Trail Finder — Thousand Trails Map",
+  "short_name": "Trail Finder",
+  "description": "Interactive map of all Thousand Trails campgrounds and RV resorts across North America.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b4332",
+  "theme_color": "#1b4332",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "navigation", "lifestyle"]
+}
