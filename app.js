@@ -199,7 +199,7 @@ function campgroundUrl(c) {
 // Popup HTML
 // ============================================================
 function popupHTML(c) {
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.name + ', ' + c.city + ', ' + c.state)}`;
   const ttUrl   = campgroundUrl(c);
   return `
     <div class="popup-card">
